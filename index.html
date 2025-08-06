@@ -1,23 +1,86 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Twilio Softphone</title>
-    <script src="https://sdk.twilio.com/js/client/v1.13/twilio.min.js"></script>
-  </head>
-  <body>
-    <h3>Softphone</h3>
-    <button onclick="makeCall()">Call</button>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Twilio Softphone</title>
+  <script src="https://media.twiliocdn.com/sdk/js/client/v1.13/twilio.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f5f6fa;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    #status {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    #controls button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
 
-    <script>
-      const token = "{{token}}";  // This must be injected server-side or passed via query param
+  <h2>Softphone</h2>
+  <div id="status">Initializing...</div>
 
-      Twilio.Device.setup(token, {
-        debug: true,
+  <div id="controls">
+    <button id="call">Call</button>
+    <button id="hangup" disabled>Hang Up</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    const statusDisplay = document.getElementById('status');
+    const callButton = document.getElementById('call');
+    const hangupButton = document.getElementById('hangup');
+
+    if (!token) {
+      statusDisplay.textContent = "Error: No token provided.";
+      callButton.disabled = true;
+    } else {
+      Twilio.Device.setup(token);
+
+      Twilio.Device.ready(() => {
+        statusDisplay.textContent = "Ready to call.";
+        callButton.disabled = false;
       });
 
-      function makeCall() {
-        Twilio.Device.connect({ To: "+15551234567" }); // Replace with actual destination
-      }
-    </script>
-  </body>
+      Twilio.Device.error((error) => {
+        console.error("Twilio.Device error:", error);
+        statusDisplay.textContent = `Error: ${error.message}`;
+      });
+
+      Twilio.Device.connect((conn) => {
+        statusDisplay.textContent = "Call in progress...";
+        callButton.disabled = true;
+        hangupButton.disabled = false;
+      });
+
+      Twilio.Device.disconnect(() => {
+        statusDisplay.textContent = "Call ended.";
+        callButton.disabled = false;
+        hangupButton.disabled = true;
+      });
+
+      callButton.onclick = () => {
+        const params = {}; // Optional: { To: "+1234567890" }
+        Twilio.Device.connect(params);
+      };
+
+      hangupButton.onclick = () => {
+        Twilio.Device.disconnectAll();
+      };
+    }
+  </script>
+
+</body>
 </html>
