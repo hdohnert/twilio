@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Twilio Softphone</title>
+    <script src="https://sdk.twilio.com/js/client/v1.13/twilio.min.js"></script>
+  </head>
+  <body>
+    <h3>Softphone</h3>
+    <button onclick="makeCall()">Call</button>
+
+    <script>
+      const token = "{{token}}";  // This must be injected server-side or passed via query param
+
+      Twilio.Device.setup(token, {
+        debug: true,
+      });
+
+      function makeCall() {
+        Twilio.Device.connect({ To: "+15551234567" }); // Replace with actual destination
+      }
+    </script>
+  </body>
+</html>
