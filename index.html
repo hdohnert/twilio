@@ -31,22 +31,43 @@
   <div id="status">Initializing...</div>
 
   <div id="controls">
-    <button id="call">Call</button>
+    <button id="call" disabled>Call</button>
     <button id="hangup" disabled>Hang Up</button>
   </div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    const API_URL = "https://www.zohoapis.com/creator/custom/thinkenergy/GenerateTwilioTokenAPI";
+    const ZOHO_OAUTH_TOKEN = "<INSERT_YOUR_ZOHO_OAUTH_TOKEN>"; // Replace this before testing
 
     const statusDisplay = document.getElementById('status');
     const callButton = document.getElementById('call');
     const hangupButton = document.getElementById('hangup');
 
-    if (!token) {
-      statusDisplay.textContent = "Error: No token provided.";
-      callButton.disabled = true;
-    } else {
+    async function fetchTwilioToken() {
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": "Zoho-oauthtoken " + ZOHO_OAUTH_TOKEN,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ identity: "harry" })
+        });
+
+        const data = await response.json();
+        return data.result; // Your Deluge function must return the token in `info result`
+      } catch (err) {
+        console.error("Error fetching Twilio token:", err);
+        statusDisplay.textContent = "Failed to fetch Twilio token.";
+        return null;
+      }
+    }
+
+    async function initializeDevice() {
+      const token = await fetchTwilioToken();
+
+      if (!token) return;
+
       Twilio.Device.setup(token);
 
       Twilio.Device.ready(() => {
@@ -70,16 +91,17 @@
         callButton.disabled = false;
         hangupButton.disabled = true;
       });
-
-      callButton.onclick = () => {
-        const params = {}; // Optional: { To: "+1234567890" }
-        Twilio.Device.connect(params);
-      };
-
-      hangupButton.onclick = () => {
-        Twilio.Device.disconnectAll();
-      };
     }
+
+    callButton.onclick = () => {
+      Twilio.Device.connect({});
+    };
+
+    hangupButton.onclick = () => {
+      Twilio.Device.disconnectAll();
+    };
+
+    document.addEventListener("DOMContentLoaded", initializeDevice);
   </script>
 
 </body>
